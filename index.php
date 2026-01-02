@@ -19,7 +19,7 @@ body{
     color:#fff;
     background:
         linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.9)),
-        url('public/images/bg4.jpg') center/cover no-repeat fixed;
+        url('public/uploads/images/bg4.jpg') center/cover no-repeat fixed;
 }
 
 

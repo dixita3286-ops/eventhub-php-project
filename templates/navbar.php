@@ -13,7 +13,7 @@ if (session_status() === PHP_SESSION_NONE) {
     width:100%;
     padding:20px 60px;
     display:grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns:auto 1fr auto;
     align-items:center;
     z-index:100;
 }
@@ -42,38 +42,50 @@ if (session_status() === PHP_SESSION_NONE) {
     color:#ff7a18;
 }
 
-/* RIGHT ACTION */
-.actions a{
-    padding:10px 22px;
-    border-radius:25px;
-    text-decoration:none;
-    font-weight:600;
+/* RIGHT AREA */
+.actions{
+    position:relative;
 }
 
 /* LOGIN BUTTON */
 .login-btn{
-    color:#fff;
+    padding:10px 22px;
+    border-radius:25px;
     border:1px solid rgba(255,255,255,0.4);
+    color:#fff;
+    text-decoration:none;
     backdrop-filter: blur(8px);
 }
 
-.login-btn:hover{
-    background:rgba(255,255,255,0.1);
-}
-
-/* LOGOUT BUTTON */
-.logout-btn{
-    background:rgba(255,255,255,0.15);
+/* HAMBURGER */
+.hamburger{
+    font-size:26px;
+    cursor:pointer;
     color:#fff;
 }
 
-/* MOBILE */
-@media(max-width:768px){
-    .navbar{
-        grid-template-columns: 1fr;
-        text-align:center;
-        gap:15px;
-    }
+/* DROPDOWN */
+.dropdown{
+    display:none;
+    position:absolute;
+    right:0;
+    top:40px;
+    background:rgba(0,0,0,0.85);
+    border-radius:12px;
+    min-width:200px;
+    padding:10px 0;
+}
+
+.dropdown a{
+    display:block;
+    padding:10px 18px;
+    color:#fff;
+    text-decoration:none;
+    font-size:14px;
+}
+
+.dropdown a:hover{
+    background:rgba(255,255,255,0.1);
 }
 </style>
 
@@ -84,18 +96,51 @@ if (session_status() === PHP_SESSION_NONE) {
 
     <!-- CENTER -->
     <div class="menu">
-        <a href="index.php">Home</a>
-        <a href="events.php">Events</a>
-        <a href="about.php">About</a>
+        <a href="/EventHub_Sem6/index.php">Home</a>
+        <a href="/EventHub_Sem6/events.php">Events</a>
+        <a href="#">About</a>
     </div>
 
     <!-- RIGHT -->
     <div class="actions">
+
+        <!-- GUEST -->
         <?php if(!isset($_SESSION['role'])){ ?>
-            <a href="auth/login.php" class="login-btn">Login</a>
+            <a href="/EventHub_Sem6/auth/login.php" class="login-btn">Login</a>
+
         <?php } else { ?>
-            <a href="logout.php" class="logout-btn">Logout</a>
+
+            <!-- LOGGED IN -->
+            <div class="hamburger" onclick="toggleMenu()">☰</div>
+
+            <div class="dropdown" id="menuBox">
+
+                <?php if($_SESSION['role']=='student'){ ?>
+                    <a href="/EventHub_Sem6/student/student_home.php">Home</a>
+                    <a href="/EventHub_Sem6/student/view_events.php">My Events</a>
+                <?php } ?>
+
+                <?php if($_SESSION['role']=='organizer'){ ?>
+                    <a href="/EventHub_Sem6/organizer/organizer_home.php">Home</a>
+                    <a href="/EventHub_Sem6/organizer/create_event.php">Create Events</a>
+                <?php } ?>
+
+                <?php if($_SESSION['role']=='admin'){ ?>
+                    <a href="/EventHub_Sem6/admin/admin_home.php">Home</a>
+                <?php } ?>
+
+                <a href="/EventHub_Sem6/logout.php">Logout</a>
+            </div>
+
         <?php } ?>
+
     </div>
 
 </div>
+
+<script>
+function toggleMenu(){
+    var box = document.getElementById("menuBox");
+    box.style.display = (box.style.display === "block") ? "none" : "block";
+}
+</script>
