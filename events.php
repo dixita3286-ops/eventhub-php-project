@@ -16,67 +16,81 @@ if (
     $category = isset($_POST['category']) ? $_POST['category'] : '';
     $sort     = isset($_POST['sort']) ? $_POST['sort'] : 'new';
 
-    /* BASIC SAFE QUERY */
     $sql = "SELECT * FROM events WHERE status='approved'";
 
     if ($search != '') {
         $sql .= " AND title LIKE '%$search%'";
     }
-
     if ($category != '') {
         $sql .= " AND category='$category'";
     }
 
-    /* SORTING (ONLY USING event_date) */
-    if ($sort == 'old') {
-        $sql .= " ORDER BY event_date ASC";
-    } elseif ($sort == 'date') {
-        $sql .= " ORDER BY event_date ASC";
-    } else {
-        $sql .= " ORDER BY event_date DESC";
-    }
+    $sql .= ($sort == 'old') 
+        ? " ORDER BY event_date ASC" 
+        : " ORDER BY event_date DESC";
 
     $res = mysqli_query($conn, $sql);
 
-    if (!$res) {
-        die("SQL ERROR: " . mysqli_error($conn));
-    }
-
     if (mysqli_num_rows($res) == 0) {
-        echo "<p style='color:#ccc'>No events found</p>";
+        echo "<p class='no-events'>No events found</p>";
         exit;
     }
 
     while ($row = mysqli_fetch_assoc($res)) {
-        ?>
-        <div class="card">
-            <h3><?php echo htmlspecialchars($row['title']); ?></h3>
 
-            <div class="meta">
-                📅 <?php echo date("d M Y", strtotime($row['event_date'])); ?>
-                &nbsp;|&nbsp;
-                📍 <?php echo htmlspecialchars($row['venue']); ?>
+        $img = !empty($row['event_image'])
+            ? "/EventHub_Sem6/public/" . $row['event_image']
+            : "/EventHub_Sem6/public/images/default_event.png";
+        ?>
+
+        <div class="card">
+
+            <img src="<?= $img ?>" class="event-img">
+
+            <div class="card-body">
+                <h3><?= htmlspecialchars($row['title']) ?></h3>
+
+                <div class="meta">
+                    📅 <?= date("d M Y", strtotime($row['event_date'])) ?><br>
+                    📍 <?= htmlspecialchars($row['venue']) ?>
+                </div>
+
+                <p>
+                    <?= substr(strip_tags($row['description']), 0, 90) ?>...
+                </p>
             </div>
 
-            <p>
-                <?php echo substr(strip_tags($row['description']), 0, 120); ?>...
-            </p>
+            <div class="card-actions">
 
-            <a href="event_details.php?id=<?php echo $row['event_id']; ?>">
-                View Details
-            </a>
+                <a href="event_details.php?id=<?= $row['event_id'] ?>" class="btn view">
+                    View
+                </a>
+
+                <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'student') { ?>
+                    <a href="student/register_event.php?id=<?= $row['event_id'] ?>" class="btn register">
+                        Register
+                    </a>
+                <?php } else { ?>
+                    <button class="btn register" onclick="askLogin()">
+                        Register
+                    </button>
+                <?php } ?>
+
+            </div>
+
         </div>
         <?php
     }
     exit;
 }
 
-/* ================= PAGE LOAD PART ================= */
-
-/* FETCH CATEGORIES */
-$catSql = "SELECT DISTINCT category FROM events WHERE status='approved'";
-$catRes = mysqli_query($conn, $catSql);
+/* ================= PAGE LOAD ================= */
+$catRes = mysqli_query(
+    $conn,
+    "SELECT DISTINCT category FROM events WHERE status='approved'"
+);
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -86,8 +100,8 @@ $catRes = mysqli_query($conn, $catSql);
         body{
             min-height:100vh;
             background:
-                linear-gradient(to bottom, rgba(0,0,0,.75), rgba(0,0,0,.9)),
-                url("public/images/bg1.jpg") center/cover no-repeat fixed;
+                linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9)),
+                url("public/uploads/images/bg1.jpg") center/cover no-repeat fixed;
             color:#fff;
             font-family:'Segoe UI',sans-serif;
         }
@@ -98,71 +112,104 @@ $catRes = mysqli_query($conn, $catSql);
             padding:0 20px;
         }
 
-        h1{
-            text-align:center;
-            margin-bottom:30px;
-        }
+        h1{text-align:center;margin-bottom:30px;}
 
-        /* FILTER BAR */
+        /* FILTERS */
         .filters{
             display:flex;
             gap:15px;
-            flex-wrap:wrap;
-            margin-bottom:35px;
+            margin-bottom:30px;
         }
-
-        .filters input,
-        .filters select{
+        .filters input,.filters select{
             padding:10px 16px;
             border-radius:25px;
             border:none;
-            outline:none;
-            font-size:14px;
         }
+        .filters input{flex:1;}
 
-        .filters input{
-            flex:1;
-        }
-
-        /* EVENTS GRID */
+        /* GRID FIX */
         .events{
             display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-            gap:25px;
+            grid-template-columns:repeat(3, 1fr);
+            gap:30px;
         }
 
+        @media(max-width:900px){
+            .events{grid-template-columns:repeat(2,1fr);}
+        }
+        @media(max-width:600px){
+            .events{grid-template-columns:1fr;}
+        }
+
+        /* CARD */
         .card{
             background:rgba(255,255,255,0.08);
-            border-radius:16px;
-            padding:20px;
+            border-radius:18px;
+            display:flex;
+            flex-direction:column;
+            height:100%;
             backdrop-filter:blur(10px);
         }
 
-        .card h3{
-            margin-bottom:10px;
+        .event-img{
+            height:180px;
+            width:100%;
+            object-fit:cover;
+            border-radius:18px 18px 0 0;
+        }
+
+        .card-body{
+            padding:15px;
+            flex:1;
+        }
+
+        .card-body h3{
             color:#ffb347;
+            margin-bottom:8px;
+            font-size:18px;
         }
 
         .meta{
             font-size:13px;
             color:#aaa;
-            margin-bottom:12px;
+            margin-bottom:8px;
         }
 
-        .card p{
+        .card-body p{
             font-size:14px;
             color:#ddd;
-            margin-bottom:15px;
         }
 
-        .card a{
-            display:inline-block;
-            padding:8px 18px;
-            background:linear-gradient(135deg,#ff7a18,#ffb347);
-            color:#000;
+        .card-actions{
+            display:flex;
+            gap:10px;
+            padding:15px;
+        }
+
+        .btn{
+            flex:1;
+            text-align:center;
+            padding:10px;
             border-radius:20px;
             text-decoration:none;
             font-weight:600;
+            cursor:pointer;
+            border:none;
+        }
+
+        .btn.view{
+            background:#444;
+            color:#fff;
+        }
+
+        .btn.register{
+            background:linear-gradient(135deg,#ff7a18,#ffb347);
+            color:#000;
+        }
+
+        .no-events{
+            text-align:center;
+            color:#ccc;
         }
     </style>
 </head>
@@ -171,66 +218,52 @@ $catRes = mysqli_query($conn, $catSql);
 <?php include("templates/navbar.php"); ?>
 
 <div class="container">
-
     <h1>Explore Events</h1>
 
-    <!-- FILTERS -->
     <div class="filters">
-        <input type="text" id="search" placeholder="Search events...">
-
+        <input type="text" id="search" placeholder="Search events">
         <select id="category">
             <option value="">All Categories</option>
-            <?php
-            if ($catRes) {
-                while ($c = mysqli_fetch_assoc($catRes)) {
-                    echo "<option value='".$c['category']."'>".$c['category']."</option>";
-                }
-            }
-            ?>
+            <?php while($c=mysqli_fetch_assoc($catRes)){ ?>
+                <option value="<?= $c['category'] ?>"><?= $c['category'] ?></option>
+            <?php } ?>
         </select>
-
         <select id="sort">
-            <option value="new">Newest First</option>
-            <option value="old">Oldest First</option>
-            <option value="date">Event Date</option>
+            <option value="new">Newest</option>
+            <option value="old">Oldest</option>
         </select>
     </div>
 
-    <!-- EVENTS -->
     <div class="events" id="eventData"></div>
-
 </div>
 
 <script>
 function loadEvents(){
-    var search   = document.getElementById("search").value;
-    var category = document.getElementById("category").value;
-    var sort     = document.getElementById("sort").value;
+    const s = search.value;
+    const c = category.value;
+    const so = sort.value;
 
-    var xhr = new XMLHttpRequest();
-    xhr.open("POST","events.php",true);
-    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-
-    xhr.onreadystatechange = function(){
-        if(xhr.readyState === 4 && xhr.status === 200){
-            document.getElementById("eventData").innerHTML = xhr.responseText;
-        }
-    };
-
-    xhr.send(
-        "search="+encodeURIComponent(search)+
-        "&category="+encodeURIComponent(category)+
-        "&sort="+encodeURIComponent(sort)
-    );
+    fetch("events.php",{
+        method:"POST",
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`search=${s}&category=${c}&sort=${so}`
+    })
+    .then(r=>r.text())
+    .then(d=>eventData.innerHTML=d);
 }
 
-document.getElementById("search").onkeyup = loadEvents;
-document.getElementById("category").onchange = loadEvents;
-document.getElementById("sort").onchange = loadEvents;
-
-/* INITIAL LOAD */
+search.onkeyup = loadEvents;
+category.onchange = loadEvents;
+sort.onchange = loadEvents;
 loadEvents();
+
+function askLogin(){
+    if(confirm("You need to login to register for an event. Login now?")){
+        window.location.href = "auth/login.php";
+    }
+}
 </script>
 
 </body>
 </html>
+

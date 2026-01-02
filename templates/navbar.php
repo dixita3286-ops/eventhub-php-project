@@ -98,7 +98,7 @@ if (session_status() === PHP_SESSION_NONE) {
     <div class="menu">
         <a href="/EventHub_Sem6/index.php">Home</a>
         <a href="/EventHub_Sem6/events.php">Events</a>
-        <a href="#">About</a>
+        <a href="/EventHub_Sem6/about.php">About</a>
     </div>
 
     <!-- RIGHT -->
@@ -117,7 +117,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
                 <?php if($_SESSION['role']=='student'){ ?>
                     <a href="/EventHub_Sem6/student/student_home.php">Home</a>
-                    <a href="/EventHub_Sem6/student/view_events.php">My Events</a>
+                    <a href="/EventHub_Sem6/student/my_registrations.php">My Registrations</a>
                 <?php } ?>
 
                 <?php if($_SESSION['role']=='organizer'){ ?>
