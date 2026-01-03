@@ -60,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <option value="">Select Role</option>
             <option value="student">Student</option>
             <option value="organizer">Organizer</option>
+            <option value="admin">Admin</option>
         </select>
 
         <input type="password" name="password" placeholder="Password" required>

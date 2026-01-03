@@ -127,6 +127,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
                 <?php if($_SESSION['role']=='admin'){ ?>
                     <a href="/EventHub_Sem6/admin/admin_home.php">Home</a>
+                    <a href="/EventHub_Sem6/admin/manage_events.php">Event Proposals</a>
                 <?php } ?>
 
                 <a href="/EventHub_Sem6/logout.php">Logout</a>

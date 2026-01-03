@@ -18,7 +18,7 @@ body{
     min-height:100vh;
     color:#fff;
     background:
-        linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.9)),
+        linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.6)),
         url('public/uploads/images/bg4.jpg') center/cover no-repeat fixed;
 }
 
