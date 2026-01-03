@@ -1,200 +1,223 @@
 <?php
 session_start();
-include("config/db.php");
+$role = isset($_SESSION['role']) ? $_SESSION['role'] : null;
 
-/* FETCH APPROVED EVENTS */
-$sql = "SELECT * FROM events WHERE status='approved' ORDER BY event_date DESC";
-$res = mysqli_query($conn, $sql);
+$conn = mysqli_connect("localhost", "root", "", "eventhub_db");
+if (!$conn) die("Database connection failed");
+
+$search   = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
+$category = isset($_GET['category']) ? mysqli_real_escape_string($conn, $_GET['category']) : '';
+$sort     = isset($_GET['sort']) ? mysqli_real_escape_string($conn, $_GET['sort']) : 'desc';
+
+/* AJAX */
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+
+    $sql = "SELECT * FROM events WHERE status='approved'";
+
+    if ($search)
+        $sql .= " AND (title LIKE '%$search%' OR venue LIKE '%$search%' OR category LIKE '%$search%')";
+
+    if ($category)
+        $sql .= " AND category='$category'";
+
+    $sql .= ($sort === "asc") ? " ORDER BY date ASC" : " ORDER BY date DESC";
+
+    $res = mysqli_query($conn, $sql);
+
+    if (mysqli_num_rows($res) == 0) {
+        echo "<p style='text-align:center;color:#aaa;'>No events found.</p>";
+        exit;
+    }
+
+    while ($r = mysqli_fetch_assoc($res)) {
+        $img = !empty($r['event_image']) ? "uploads/".$r['event_image'] : "uploads/images/default.jpg";
+
+        echo "
+        <div class='event-card'>
+            <img src='$img' loading='lazy' alt='Event'>
+            <div class='event-info'>
+                <h3>{$r['title']}</h3>
+                <p><strong>Category:</strong> {$r['category']}</p>
+                <p><strong>Date:</strong> {$r['date']}</p>
+            </div>
+            <div class='event-actions'>
+                <a href='event_details.php?id={$r['event_id']}'>View Details</a>
+                <span>|</span>
+                <a href='login.php?msg=Please login to register'>Register</a>
+            </div>
+        </div>";
+    }
+    exit;
+}
+
+$sql = "SELECT * FROM events WHERE status='approved' ORDER BY date DESC";
+$result = mysqli_query($conn, $sql);
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Events | EventHub</title>
+<title>EventHub - Events</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Parisienne&display=swap" rel="stylesheet">
 
-    <style>
-        body{
-            min-height:100vh;
-            background:
-                linear-gradient(to bottom, rgba(0,0,0,.75), rgba(0,0,0,.9)),
-                url("public/images/bg1.jpg") center/cover no-repeat fixed;
-            color:#fff;
-            font-family:'Segoe UI',sans-serif;
-            padding-top:80px;
-            overflow-x:hidden;
-        }
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+    font-family:Poppins,sans-serif;
+    background:#0d0d0d;
+    color:#fff;
+}
 
-        .container{
-            max-width:1200px;
-            margin:40px auto 60px;
-            padding:0 20px;
-        }
+/* NAVBAR */
+.navbar{
+    position:fixed;
+    top:0;
+    width:100%;
+    background:#000;
+    padding:12px 25px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:2px solid #ff9900;
+    z-index:2000;
+}
+.navbar img{height:40px;border-radius:6px}
 
-        h1{
-            text-align:center;
-            margin-bottom:35px;
-        }
+/* MAIN */
+.main{
+    padding:120px 90px 90px;
+    contain:layout paint;
+}
 
-        /* GRID */
-        .events{
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:30px;
-        }
+h1{
+    text-align:center;
+    font-family:'Parisienne',cursive;
+    font-size:48px;
+    color:#ffcc66;
+    margin-bottom:25px;
+}
 
-        @media(max-width:900px){
-            .events{grid-template-columns:repeat(2,1fr);}
-        }
-        @media(max-width:600px){
-            .events{grid-template-columns:1fr;}
-        }
+/* FILTERS */
+.filters{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    flex-wrap:wrap;
+    margin-bottom:25px;
+}
+.filters input,
+.filters select{
+    padding:10px 14px;
+    border-radius:10px;
+    background:#000;
+    color:#fff;
+    border:none;
+}
 
-        /* CARD */
-        .card{
-            background:rgba(255,255,255,0.08);
-            border-radius:18px;
-            display:flex;
-            flex-direction:column;
-            backdrop-filter:blur(10px);
-        }
+/* GRID */
+.event-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:25px;
+}
 
-        .event-img{
-            width:100%;
-            height:190px;
-            object-fit:cover;
-            border-radius:18px 18px 0 0;
-        }
+/* CARD (GPU OPTIMIZED) */
+.event-card{
+    background:rgba(255,255,255,0.08);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 8px 25px rgba(0,0,0,.45);
+    transition:transform .25s ease;
+    will-change:transform;
+    transform:translateZ(0);
+}
 
-        .card-body{
-            padding:15px;
-            flex:1;
-        }
+.event-card:hover{
+    transform:translateY(-5px);
+}
 
-        .card-body h3{
-            color:#ffb347;
-            margin-bottom:8px;
-        }
+/* IMAGE */
+.event-card img{
+    width:100%;
+    height:240px;
+    object-fit:cover;
+}
 
-        .meta{
-            font-size:13px;
-            color:#ccc;
-            margin-bottom:10px;
-        }
+/* INFO */
+.event-info{padding:16px 18px}
+.event-info h3{color:#ff9900;margin-bottom:6px}
+.event-info p{color:#ddd;font-size:14px}
 
-        .card-body p{
-            font-size:14px;
-            color:#ddd;
-        }
+/* ACTIONS */
+.event-actions{
+    padding:12px 18px;
+    border-top:1px solid rgba(255,255,255,0.05);
+}
+.event-actions a{
+    color:#ff8c00;
+    font-weight:600;
+    text-decoration:none;
+}
 
-        .card-actions{
-            padding:15px;
-            display:flex;
-            gap:10px;
-            flex-wrap:wrap;
-        }
-
-        .btn{
-            flex:1;
-            padding:10px;
-            border-radius:22px;
-            text-decoration:none;
-            text-align:center;
-            font-weight:600;
-            cursor:pointer;
-        }
-
-        .view{
-            background:#444;
-            color:#fff;
-        }
-
-        .action{
-            background:linear-gradient(135deg,#ff7a18,#ffb347);
-            color:#000;
-        }
-    </style>
+/* DISABLE HOVER DURING SCROLL */
+body.scrolling .event-card:hover{
+    transform:none;
+}
+</style>
 </head>
+
 <body>
+<?php include(__DIR__ . "/templates/navbar.php"); ?>
 
-<?php include("templates/navbar.php"); ?>
 
-<div class="container">
-    <h1>Explore Events</h1>
-
-    <?php if(mysqli_num_rows($res) == 0){ ?>
-        <p style="text-align:center;color:#ccc;">No events available.</p>
-    <?php } else { ?>
-
-    <div class="events">
-
-        <?php while($row = mysqli_fetch_assoc($res)){
-
-            $img = !empty($row['event_image'])
-                ? "/EventHub_Sem6/public/".$row['event_image']
-                : "/EventHub_Sem6/public/images/default_event.png";
+    <div class="event-grid" id="eventGrid">
+        <?php while($row=mysqli_fetch_assoc($result)): 
+            $img = !empty($row['event_image']) ? "public/uploads/".$row['event_image'] : "images/default.jpg";
         ?>
-
-        <div class="card">
-
-            <img src="<?php echo $img; ?>" class="event-img">
-
-            <div class="card-body">
-                <h3><?php echo htmlspecialchars($row['title']); ?></h3>
-
-                <div class="meta">
-                    📅 <?php echo date("d M Y", strtotime($row['event_date'])); ?><br>
-                    📍 <?php echo htmlspecialchars($row['venue']); ?>
-                </div>
-
-                <p><?php echo substr(strip_tags($row['description']),0,90); ?>...</p>
+        <div class="event-card">
+            <img src="<?= $img ?>" loading="lazy">
+            <div class="event-info">
+                <h3><?= $row['title'] ?></h3>
+                <p><b>Category:</b> <?= $row['category'] ?></p>
+                <p><b>Date:</b> <?= $row['date'] ?></p>
             </div>
-
-            <!-- CARD ACTIONS -->
-            <div class="card-actions">
-
-                <!-- VIEW DETAILS (ALL) -->
-                <a href="event_details.php?id=<?php echo $row['event_id']; ?>" class="btn view">
-                    View Details
-                </a>
-
-                <!-- GUEST -->
-                <?php if(!isset($_SESSION['role'])){ ?>
-                    <a href="auth/login.php" class="btn action">
-                        Register
-                    </a>
-                <?php } ?>
-
-                <!-- STUDENT -->
-                <?php if(isset($_SESSION['role']) && $_SESSION['role']==='student'){ ?>
-                    <a href="student/register_event.php?id=<?php echo $row['event_id']; ?>" class="btn action">
-                        Register
-                    </a>
-                <?php } ?>
-
-                <!-- ORGANIZER -->
-                <?php if(isset($_SESSION['role']) && $_SESSION['role']==='organizer'){ ?>
-                    <!-- Only View Details -->
-                <?php } ?>
-
-                <!-- ADMIN -->
-                <?php if(isset($_SESSION['role']) && $_SESSION['role']==='admin'){ ?>
-                    <a href="admin/view_registrations.php?event_id=<?php echo $row['event_id']; ?>" class="btn action">
-                        View Registrations
-                    </a>
-                    <a href="admin/modify_event.php?event_id=<?php echo $row['event_id']; ?>" class="btn action">
-                        Modify
-                    </a>
-                <?php } ?>
-
+            <div class="event-actions">
+                <a href="event_details.php?id=<?= $row['event_id'] ?>">View Details</a>
+                |
+                <a href="login.php?msg=Please login to register">Register</a>
             </div>
-
         </div>
-
-        <?php } ?>
-
+        <?php endwhile; ?>
     </div>
-
-    <?php } ?>
 </div>
+
+<script>
+/* FILTER AJAX */
+let timer;
+function loadEvents(){
+    const q=document.getElementById("searchInput").value;
+    const c=document.getElementById("category").value;
+    const s=document.getElementById("sortDate").value;
+
+    fetch(`events.php?ajax=1&search=${q}&category=${c}&sort=${s}`)
+        .then(r=>r.text())
+        .then(d=>document.getElementById("eventGrid").innerHTML=d);
+}
+
+["keyup","change"].forEach(e=>{
+    searchInput.addEventListener(e,()=>{clearTimeout(timer);timer=setTimeout(loadEvents,300)})
+    category.addEventListener(e,loadEvents)
+    sortDate.addEventListener(e,loadEvents)
+});
+
+/* SCROLL OPTIMIZATION */
+let scrollTimer;
+window.addEventListener("scroll",()=>{
+    document.body.classList.add("scrolling");
+    clearTimeout(scrollTimer);
+    scrollTimer=setTimeout(()=>document.body.classList.remove("scrolling"),150);
+});
+</script>
 
 </body>
 </html>

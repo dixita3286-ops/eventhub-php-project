@@ -32,170 +32,206 @@ $res = mysqli_query($conn, $sql);
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My Registrations | EventHub</title>
+<title>My Registrations | EventHub</title>
 
-    <style>
-        body{
-            min-height:100vh;
-            background:
-                linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.9)),
-                url("../public/images/bg1.jpg") center/cover no-repeat fixed;
-            color:#fff;
-            font-family:'Segoe UI',sans-serif;
-        }
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
 
-        .container{
-            max-width:1200px;
-            margin:130px auto 50px;
-            padding:0 20px;
-        }
+body{
+    background:#0d0d0d;
+    color:#fff;
+    font-family:'Segoe UI',sans-serif;
+}
 
-        h1{
-            text-align:center;
-            margin-bottom:30px;
-        }
+/* PAGE WRAPPER */
+.page{
+    max-width:1300px;
+    margin:110px auto 60px;
+    padding:0 25px;
+}
 
-        .grid{
-            display:grid;
-            grid-template-columns:repeat(3,1fr);
-            gap:30px;
-        }
+/* HEADER */
+.header{
+    margin-bottom:35px;
+}
+.header h1{
+    font-size:32px;
+    font-weight:600;
+}
+.header p{
+    color:#aaa;
+    margin-top:6px;
+}
 
-        @media(max-width:900px){
-            .grid{grid-template-columns:repeat(2,1fr);}
-        }
-        @media(max-width:600px){
-            .grid{grid-template-columns:1fr;}
-        }
+/* GRID */
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+    gap:25px;
+}
 
-        .card{
-            background:rgba(255,255,255,0.08);
-            border-radius:18px;
-            display:flex;
-            flex-direction:column;
-            backdrop-filter:blur(10px);
-        }
+/* CARD */
+.card{
+    background:#141414;
+    border-radius:14px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
+    transition:transform .25s ease;
+    will-change:transform;
+}
 
-        .event-img{
-            height:180px;
-            width:100%;
-            object-fit:cover;
-            border-radius:18px 18px 0 0;
-        }
+.card:hover{
+    transform:translateY(-4px);
+}
 
-        .card-body{
-            padding:15px;
-            flex:1;
-        }
+/* IMAGE */
+.card img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+}
 
-        .card-body h3{
-            color:#ffb347;
-            margin-bottom:8px;
-        }
+/* BODY */
+.card-body{
+    padding:16px;
+    flex:1;
+}
 
-        .meta{
-            font-size:13px;
-            color:#aaa;
-            margin-bottom:8px;
-        }
+.card-body h3{
+    font-size:18px;
+    margin-bottom:8px;
+    color:#ffb347;
+}
 
-        .meta span{
-            display:block;
-        }
+.meta{
+    font-size:13px;
+    color:#bbb;
+    margin-bottom:12px;
+}
+.meta span{
+    display:block;
+    margin-bottom:4px;
+}
 
-        .status{
-            margin-top:8px;
-            font-size:14px;
-        }
+/* PAYMENT */
+.payment{
+    margin-top:auto;
+    font-size:14px;
+}
+.badge{
+    display:inline-block;
+    padding:4px 10px;
+    border-radius:12px;
+    font-size:12px;
+    font-weight:600;
+    margin-left:6px;
+}
+.paid{background:#1e7e34;color:#fff}
+.pending{background:#ff9800;color:#000}
 
-        .paid{color:#4caf50;}
-        .pending{color:#ff9800;}
+/* ACTIONS */
+.actions{
+    display:flex;
+    gap:10px;
+    padding:15px;
+    border-top:1px solid rgba(255,255,255,0.06);
+}
 
-        .card-actions{
-            padding:15px;
-            display:flex;
-            gap:10px;
-        }
+.actions a{
+    flex:1;
+    text-align:center;
+    padding:10px;
+    border-radius:10px;
+    text-decoration:none;
+    font-weight:600;
+    font-size:14px;
+}
 
-        .btn{
-            flex:1;
-            text-align:center;
-            padding:10px;
-            border-radius:20px;
-            text-decoration:none;
-            font-weight:600;
-        }
+.view{
+    background:#2a2a2a;
+    color:#fff;
+}
 
-        .view{
-            background:#444;
-            color:#fff;
-        }
+.pass{
+    background:#ffb347;
+    color:#000;
+}
 
-        .no-data{
-            text-align:center;
-            color:#ccc;
-            margin-top:80px;
-        }
-    </style>
+/* EMPTY STATE */
+.empty{
+    text-align:center;
+    margin-top:100px;
+    color:#aaa;
+}
+</style>
 </head>
+
 <body>
 
-<?php include("../templates/navbar.php"); ?>
+<?php include(__DIR__ . "/../templates/navbar.php"); ?>
 
-<div class="container">
-    <h1>My Registered Events</h1>
+<div class="page">
 
-    <?php if (mysqli_num_rows($res) == 0) { ?>
+    <div class="header">
+        <h1>My Registrations</h1>
+        <p>All events you have successfully registered for</p>
+    </div>
 
-        <p class="no-data">You have not registered for any events yet.</p>
+<?php if (mysqli_num_rows($res) == 0) { ?>
 
-    <?php } else { ?>
+    <div class="empty">
+        <p>You have not registered for any events yet.</p>
+    </div>
+
+<?php } else { ?>
 
     <div class="grid">
 
-        <?php while ($row = mysqli_fetch_assoc($res)) {
+    <?php while ($row = mysqli_fetch_assoc($res)) {
 
-            $img = !empty($row['event_image'])
-                ? "/EventHub_Sem6/public/" . $row['event_image']
-                : "/EventHub_Sem6/public/images/default_event.png";
-        ?>
+        $img = !empty($row['event_image'])
+            ? "/EventHub_Sem6/public/" . $row['event_image']
+            : "/EventHub_Sem6/public/images/default_event.png";
+    ?>
 
         <div class="card">
 
-            <img src="<?php echo $img; ?>" class="event-img">
+            <img src="<?= $img ?>" loading="lazy" alt="Event">
 
             <div class="card-body">
-                <h3><?php echo htmlspecialchars($row['title']); ?></h3>
+                <h3><?= htmlspecialchars($row['title']) ?></h3>
 
                 <div class="meta">
-                    <span>📅 <?php echo date("d M Y", strtotime($row['event_date'])); ?></span>
-                    <span>📍 <?php echo htmlspecialchars($row['venue']); ?></span>
+                    <span>📅 <?= date("d M Y", strtotime($row['event_date'])) ?></span>
+                    <span>📍 <?= htmlspecialchars($row['venue']) ?></span>
                 </div>
 
-                <div class="status">
-                    💳 ₹<?php echo number_format($row['payment_amount'],2); ?>
-                    (<?php echo htmlspecialchars($row['payment_status']); ?>)
+                <div class="payment">
+                    ₹<?= number_format($row['payment_amount'],2) ?>
+                    <span class="badge <?= $row['payment_status']=='paid'?'paid':'pending' ?>">
+                        <?= ucfirst($row['payment_status']) ?>
+                    </span>
                 </div>
             </div>
 
-            <div class="card-actions">
-    <a href="/EventHub_Sem6/event_details.php?id=<?php echo $row['event_id']; ?>" class="btn view">
-        View Details
-    </a>
-
-    <a href="event_pass.php?rid=<?php echo $row['registration_id']; ?>" class="btn view">
-        Download Pass
-    </a>
-</div>
-
+            <div class="actions">
+                <a href="/EventHub_Sem6/event_details.php?id=<?= $row['event_id'] ?>" class="view">
+                    View Details
+                </a>
+                <a href="event_pass.php?rid=<?= $row['registration_id'] ?>" class="pass">
+                    Download Pass
+                </a>
+            </div>
 
         </div>
 
-        <?php } ?>
+    <?php } ?>
 
     </div>
 
-    <?php } ?>
+<?php } ?>
 
 </div>
 
