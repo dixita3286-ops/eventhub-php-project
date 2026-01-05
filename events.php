@@ -47,7 +47,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     while ($row = mysqli_fetch_assoc($res)) {
 
         $img = !empty($row['event_image'])
-            ? "public/uploads/".$row['event_image']
+            ? "public/".$row['event_image']
             : "images/default.jpg";
 
         echo "
